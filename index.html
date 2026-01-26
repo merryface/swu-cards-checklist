@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SWU Collection Checklist</title>
+  <link rel="preload" href="fonts/Aurebesh.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="fonts/Starjedi.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>SWU Collection Checklist</h1>
+    
+    <form id="checklistForm">
+      <div class="form-group">
+        <label for="setSelect">Set:</label>
+        <select id="setSelect" name="set">
+          <option value="">-- Select Set --</option>
+          <option value="SOR">SOR</option>
+          <option value="SHD">SHD</option>
+          <option value="TWI">TWI</option>
+          <option value="JTL">JTL</option>
+          <option value="LOF">LOF</option>
+          <option value="SEC">SEC</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="circlesSelect">Number of Circles:</label>
+        <select id="circlesSelect" name="circles">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+
+      <button type="submit">Generate Checklist</button>
+      <button type="button" id="printBtn" onclick="window.print()" disabled>
+        <span class="spinner" style="display: none;"></span>
+        <span class="button-text">Print Checklist</span>
+      </button>
+    </form>
+
+    <div id="checklist"></div>
+  </div>
+</body>
+</html>
