@@ -105,13 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return cachedCards;
     }
 
-    // Fetch from API - use proxy for local development
+    // Fetch from API - always use CORS proxy since API doesn't have CORS headers
     const apiUrl = `${API_BASE_URL}/cards/${setCode.toLowerCase()}`;
-
-    const isLocalDev = window.location.protocol === 'file:' || 
-                       window.location.hostname === 'localhost' || 
-                       window.location.hostname === '127.0.0.1';
-    const fetchUrl = isLocalDev ? `${CORS_PROXY_URL}${encodeURIComponent(apiUrl)}` : apiUrl;
+    const fetchUrl = `${CORS_PROXY_URL}${encodeURIComponent(apiUrl)}`;
     
     console.log('Fetching from:', fetchUrl);
     
