@@ -200,28 +200,39 @@ document.addEventListener('DOMContentLoaded', () => {
       return aspectString.filter(aspect => aspect && aspect.length > 0);
     }
     
-    // Handle string format like "['Vigilance', 'Villainy']"
+    // Handle string format like "['Vigilance', 'Villainy']" or "Vigilance"
     if (typeof aspectString === 'string') {
       const cleaned = aspectString
         .replace(/^\[/, '')
         .replace(/\]$/, '')
         .replace(/'/g, '')
-        .replace(/"/g, '');
+        .replace(/"/g, '')
+        .trim();
       
-      return cleaned
-        .split(',')
-        .map(aspect => aspect.trim())
-        .filter(aspect => aspect.length > 0);
+      // Only split by comma if there's actually a comma present
+      if (cleaned.includes(',')) {
+        return cleaned
+          .split(',')
+          .map(aspect => aspect.trim())
+          .filter(aspect => aspect.length > 0);
+      } else {
+        // Single aspect, return as array with one element
+        return cleaned.length > 0 ? [cleaned] : [];
+      }
     }
     
     return [];
   }
 
-  function groupCards(cards) {
-    const ASPECT_ORDER = ['Vigilance', 'Command', 'Aggression', 'Cunning', 'Villainy', 'Heroism'];
+  // Simplified grouping per user preference. LAW gets a special Multi-Aspect rule.
+  function groupCards(cards, setCode) {
+    const normalizedSetCode = setCode ? setCode.toUpperCase() : '';
+    const isLaw = normalizedSetCode === 'LAW';
+
     const groups = {
       'Leaders': [],
       'Bases': [],
+      'Multi-Aspect': [],
       'Vigilance': [],
       'Command': [],
       'Aggression': [],
@@ -232,17 +243,33 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     for (const card of cards) {
-      const type = card.type.toLowerCase();
-      
+      const type = (card.type || '').toLowerCase();
+
       if (type === 'leader') {
         groups['Leaders'].push(card);
-      } else if (type === 'base') {
+        continue;
+      }
+
+      if (type === 'base') {
         groups['Bases'].push(card);
-      } else if (card.aspects.length > 0) {
-        // Use the first aspect for grouping
-        const primaryAspect = card.aspects[0];
-        if (groups[primaryAspect]) {
-          groups[primaryAspect].push(card);
+        continue;
+      }
+
+      const aspects = Array.isArray(card.aspects) ? card.aspects : [];
+
+      // LAW-specific Multi-Aspect: more than one non-Heroism, non-Villainy aspects
+      if (isLaw) {
+        const nonHV = aspects.filter(a => a !== 'Heroism' && a !== 'Villainy');
+        if (nonHV.length > 1) {
+          groups['Multi-Aspect'].push(card);
+          continue;
+        }
+      }
+
+      if (aspects.length > 0) {
+        const primary = aspects[0];
+        if (groups[primary]) {
+          groups[primary].push(card);
         } else {
           groups['Other'].push(card);
         }
@@ -251,15 +278,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Return only non-empty groups in order
+    // Return groups in the user's preferred order
     const ordered = [];
-    const groupOrder = ['Leaders', 'Bases', ...ASPECT_ORDER, 'Other'];
-    
-    for (const groupName of groupOrder) {
-      if (groups[groupName].length > 0) {
-        // Sort cards by number in ascending order
-        const sortedCards = groups[groupName].sort((a, b) => a.number - b.number);
-        ordered.push({ name: groupName, cards: sortedCards });
+    const groupOrder = ['Leaders', 'Bases', 'Multi-Aspect', 'Vigilance', 'Command', 'Aggression', 'Cunning', 'Villainy', 'Heroism', 'Other'];
+
+    for (const name of groupOrder) {
+      if (groups[name] && groups[name].length > 0) {
+        ordered.push({ name, cards: groups[name].sort((a, b) => a.number - b.number) });
       }
     }
 
@@ -318,14 +343,21 @@ document.addEventListener('DOMContentLoaded', () => {
       'Cunning': { regular: 'Yellow', aurebesh: 'Cunning' },
       'Villainy': { regular: 'Black', aurebesh: 'Villainy' },
       'Heroism': { regular: 'White', aurebesh: 'Heroism' },
+      'Multi-Aspect': { regular: 'Multi-Aspect', aurebesh: 'Multi-Aspect' },
       'Other': { regular: 'Grey', aurebesh: 'Other' }
     };
 
-    const groupedCards = groupCards(cards);
+    const groupedCards = groupCards(cards, setCode);
     let html = '';
     
     for (const group of groupedCards) {
-      const display = ASPECT_DISPLAY[group.name] || { regular: group.name, aurebesh: group.name };
+      const display = ASPECT_DISPLAY[group.name] || {
+        regular: group.name
+          .split(' / ')
+          .map((aspect) => ASPECT_DISPLAY[aspect]?.regular || aspect)
+          .join(' / '),
+        aurebesh: group.name
+      };
       
       html += `
         <div class="card-group">
@@ -369,7 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
       'TWI': 'Twilight of the Republic',
       'JTL': 'Jump to Lightspeed',
       'LOF': 'Legends of the Force',
-      'SEC': 'Secrets of Power'
+      'SEC': 'Secrets of Power',
+      'LAW': 'Law and Order'
     };
     
     const setCodeUpper = setCode.toUpperCase();
